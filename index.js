@@ -21,22 +21,42 @@ const connections = new Map();
 
 wss.on("connection", (conn) => {
   const id = v4();
-  connections.set(id, conn);
+  connections.set(id, { conn, name: "" });
 
   conn.send(JSON.stringify({ value: id, type: "id" }));
-
-  connections.forEach((c) => {
-    c.send(JSON.stringify({ type: "friends", value: [...connections.keys()] }));
-  });
 
   conn.on("close", () => {
     connections.delete(id);
   });
 
   conn.on("message", function incoming(data, isBinary) {
+    console.log("msg rcv", data.toString());
     const msg = JSON.parse(data.toString());
     if (msg.type === "msg") {
-      connections.get(msg.to).send(data.toString());
+      connections.get(msg.to).conn.send(data.toString());
+    }
+
+    if (msg.type === "setName") {
+      connections.set(id, { conn, name: msg.value });
+
+      conn.send(JSON.stringify({ type: "setName", success: true }));
+
+      connections.forEach((c) => {
+        c.conn.send(
+          JSON.stringify({
+            type: "friends",
+            value: Array.from(connections, ([key, value]) => ({
+              id: key,
+              name: value.name,
+            })),
+          })
+        );
+      });
     }
   });
 });
+
+// const arr = [{conn: {}, name: "Joe"}, {conn: {}, name: "Jan"}, {conn: {}, name: "John"}]
+// const m = new Map([["1", {conn: {}, name: "Joe"}], ["2", {conn: {}, name: "Jan"}], ["3", {conn: {}, name: "John"}]])
+//Array.from(m, ([key, value]) => ({ key, value }))
+//Array.from(m, ([key, value]) => ({ key, value })).map(
