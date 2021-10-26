@@ -32,7 +32,7 @@ wss.on("connection", (conn) => {
   conn.on("message", function incoming(data, isBinary) {
     console.log("msg rcv", data.toString());
     const msg = JSON.parse(data.toString());
-    if (msg.type === "msg") {
+    if (msg.type === "msg" && connections.has(msg.to)) {
       connections.get(msg.to).conn.send(data.toString());
     }
 
