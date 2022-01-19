@@ -18,7 +18,7 @@ import WebSocket, { WebSocketServer } from "ws";
 
 const wss = new WebSocketServer({ port: 8080 });
 const connections = new Map();
-
+//event name= connection
 wss.on("connection", (conn) => {
   const id = v4();
   connections.set(id, { conn, name: "" });
@@ -37,9 +37,12 @@ wss.on("connection", (conn) => {
     }
 
     if (msg.type === "setName") {
+      if (msg.value === "") {
+        msg.value = `Bilbo ${connections.size}`;
+      }
       connections.set(id, { conn, name: msg.value });
 
-      conn.send(JSON.stringify({ type: "setName", success: true }));
+      conn.send(JSON.stringify({ type: "setName", success: true, value: msg.value}));
 
       connections.forEach((c) => {
         c.conn.send(
